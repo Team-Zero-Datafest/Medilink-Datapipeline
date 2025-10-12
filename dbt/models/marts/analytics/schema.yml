@@ -1,0 +1,52 @@
+version: 2
+
+models:
+  - name: patient_summary
+    description: Comprehensive patient clinical summary
+    columns:
+      - name: patient_id
+        description: Unique patient identifier
+        tests:
+          - unique
+          - not_null
+      - name: engagement_score
+        description: Patient engagement score (0-100)
+        tests:
+          - not_null
+  
+  - name: facility_performance
+    description: Facility operational and performance metrics
+    columns:
+      - name: facility_id
+        description: Unique facility identifier
+        tests:
+          - unique
+          - not_null
+      - name: volume_category
+        description: Facility patient volume category
+        tests:
+          - accepted_values:
+              values: ['High Volume', 'Medium Volume', 'Low Volume', 'Inactive']
+  
+  - name: triage_trends
+    description: Time-series analysis of triage patterns
+    columns:
+      - name: visit_date
+        description: Date of triage visits
+        tests:
+          - not_null
+      - name: facility_state
+        tests:
+          - not_null
+  
+  - name: condition_analysis
+    description: Analysis of medical conditions and diagnoses
+    columns:
+      - name: condition
+        description: Medical condition name
+        tests:
+          - not_null
+      - name: total_occurrences
+        description: Total number of occurrences
+        tests:
+          - not_null
