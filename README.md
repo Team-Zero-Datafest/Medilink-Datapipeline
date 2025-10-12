@@ -34,6 +34,8 @@ A comprehensive data pipeline for processing medical records from S3 to RDS Post
 
 This project provides an end-to-end solution for managing and analyzing medical records data. It automates the process of extracting CSV files from S3, loading them into PostgreSQL RDS, transforming the data with dbt, and exposing the data through a RESTful API.
 
+It is used with the medilink frontend to handle upload bulk patients, facilities or workers in a central repository in which medilink can then interface with individually entities specifically or collectively.
+
 ### Key Capabilities
 
 - **Automated ETL**: Daily scheduled pipeline processing medical records from S3
