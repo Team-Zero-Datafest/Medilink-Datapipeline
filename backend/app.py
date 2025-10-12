@@ -3,12 +3,9 @@ Flask API for Medical Records System
 """
 from flask import Flask, jsonify, request
 from flask_cors import CORS
-from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy.orm import DeclarativeBase
 from datetime import datetime
 import os
 import logging
-import sys
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -18,35 +15,16 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 CORS(app)
 
-# Database configuration with validation
-DB_HOST = os.getenv('POSTGRES_HOST')
+# Database configuration - Clean the host value
+DB_HOST = os.getenv('POSTGRES_HOST', 'localhost').replace('http://', '').replace('https://', '').strip('/')
 DB_PORT = os.getenv('POSTGRES_PORT', '5432')
-DB_USER = os.getenv('POSTGRES_USER')
-DB_PASSWORD = os.getenv('POSTGRES_PASSWORD')
-DB_NAME = os.getenv('POSTGRES_DB')
+DB_USER = os.getenv('POSTGRES_USER', 'postgres')
+DB_PASSWORD = os.getenv('POSTGRES_PASSWORD', 'secret')
+DB_NAME = os.getenv('POSTGRES_DB', 'postgres')
 
-# Validate required environment variables
-required_vars = {
-    'POSTGRES_HOST': DB_HOST,
-    'POSTGRES_USER': DB_USER,
-    'POSTGRES_PASSWORD': DB_PASSWORD,
-    'POSTGRES_DB': DB_NAME
-}
-
-missing_vars = [var for var, value in required_vars.items() if not value]
-if missing_vars:
-    logger.error(f"Missing required environment variables: {', '.join(missing_vars)}")
-    logger.error("Please check your .env file and docker-compose.yaml")
-    sys.exit(1)
-
-# Ensure port is valid
-try:
-    DB_PORT = str(int(DB_PORT))  # Validate and convert to string
-except (ValueError, TypeError):
-    logger.error(f"Invalid POSTGRES_PORT value: {DB_PORT}. Using default 5432")
-    DB_PORT = '5432'
-
+# Construct database URI
 DATABASE_URI = f'postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}'
+
 logger.info(f"Connecting to database: postgresql://{DB_USER}:***@{DB_HOST}:{DB_PORT}/{DB_NAME}")
 
 app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URI
@@ -57,14 +35,11 @@ app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
     'pool_recycle': 300,
 }
 
-# Initialize database
-class Base(DeclarativeBase):
-    pass
-
-db = SQLAlchemy(model_class=Base)
+# Import and initialize database
+from database import db
 db.init_app(app)
 
-# Import models after db is created
+# Import models and schemas AFTER db initialization
 from models import Facility, Patient, MedicalRecord, TriageVisit, RecordRequest
 from schemas import (
     FacilityCreate, FacilityOut,
@@ -85,14 +60,16 @@ def health_check():
         return jsonify({
             'status': 'healthy',
             'timestamp': datetime.utcnow().isoformat(),
-            'database': 'connected'
+            'database': 'connected',
+            'host': DB_HOST
         }), 200
     except Exception as e:
         logger.error(f"Health check failed: {str(e)}")
         return jsonify({
             'status': 'unhealthy',
             'timestamp': datetime.utcnow().isoformat(),
-            'error': str(e)
+            'error': str(e),
+            'host': DB_HOST
         }), 503
 
 
@@ -403,5 +380,5 @@ def internal_error(error):
 if __name__ == '__main__':
     with app.app_context():
         logger.info("Starting Medical Records API...")
-        logger.info(f"Database: postgresql://{DB_USER}:***@{DB_HOST}:{DB_PORT}/{DB_NAME}")
+        logger.info(f"Database: {DB_HOST}:{DB_PORT}/{DB_NAME}")
     app.run(host='0.0.0.0', port=5000, debug=False)

@@ -1,11 +1,11 @@
 """
-SQLAlchemy models for medical records database
+SQLAlchemy models
 """
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, Date, DateTime, Numeric, Text, ForeignKey, CheckConstraint, Index
+from sqlalchemy import Column, Integer, String, Date, DateTime, Numeric, Text, ForeignKey
 from sqlalchemy.dialects.postgresql import JSONB, ARRAY
 from sqlalchemy.orm import relationship
-from app import db
+from database import db  # Import from database.py instead of app.py
 
 class Facility(db.Model):
     __tablename__ = 'facilities'
@@ -19,13 +19,9 @@ class Facility(db.Model):
     type = Column(String(100))
     created_at = Column(DateTime, default=datetime.utcnow)
     
-    # Relationships
     patients = relationship('Patient', back_populates='facility', lazy='dynamic')
     medical_records = relationship('MedicalRecord', back_populates='facility', lazy='dynamic')
     triage_visits = relationship('TriageVisit', back_populates='facility', lazy='dynamic')
-    
-    def __repr__(self):
-        return f'<Facility {self.name} - {self.state}>'
 
 
 class Patient(db.Model):
@@ -40,14 +36,10 @@ class Patient(db.Model):
     phone = Column(String(20))
     created_at = Column(DateTime, default=datetime.utcnow)
     
-    # Relationships
     facility = relationship('Facility', back_populates='patients')
     medical_records = relationship('MedicalRecord', back_populates='patient', lazy='dynamic')
     triage_visits = relationship('TriageVisit', back_populates='patient', lazy='dynamic')
     record_requests = relationship('RecordRequest', back_populates='patient', lazy='dynamic')
-    
-    def __repr__(self):
-        return f'<Patient {self.first_name} {self.last_name}>'
 
 
 class MedicalRecord(db.Model):
@@ -61,12 +53,8 @@ class MedicalRecord(db.Model):
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
-    # Relationships
     patient = relationship('Patient', back_populates='medical_records')
     facility = relationship('Facility', back_populates='medical_records')
-    
-    def __repr__(self):
-        return f'<MedicalRecord {self.id} - Patient {self.patient_id}>'
 
 
 class TriageVisit(db.Model):
@@ -82,12 +70,8 @@ class TriageVisit(db.Model):
     provider = Column(String(255))
     created_at = Column(DateTime, default=datetime.utcnow)
     
-    # Relationships
     patient = relationship('Patient', back_populates='triage_visits')
     facility = relationship('Facility', back_populates='triage_visits')
-    
-    def __repr__(self):
-        return f'<TriageVisit {self.id} - Level {self.triage_level}>'
 
 
 class RecordRequest(db.Model):
@@ -102,8 +86,4 @@ class RecordRequest(db.Model):
     created_at = Column(DateTime, default=datetime.utcnow)
     acted_at = Column(DateTime)
     
-    # Relationships
     patient = relationship('Patient', back_populates='record_requests')
-    
-    def __repr__(self):
-        return f'<RecordRequest {self.id} - Status: {self.status}>'
